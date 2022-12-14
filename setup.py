@@ -22,7 +22,7 @@ setup(
     name=PACKAGE_NAME,
     packages=find_packages(exclude=['*tests*']),
     version=version[0],
-    license="Creative Commons Zero v1.0 Universal",
+    license="GNU General Public License v3.0",
     description=DESCRIPTION,
     long_description_content_type="text/markdown",
     long_description=long_description,
