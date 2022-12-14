@@ -13,6 +13,8 @@ Module for reading signals.
 - get_identifier()      : Gets a signal identifier by matching a pattern.
 - rename_ECG_and_EGM()  : Rename appropriately ECG and EGM identifiers.
 
+### Version: 0.1.0
+
 ### Author: 
 Alejandro Alcaine Otín, Ph.D.
     lalcaine@usj.es"""
