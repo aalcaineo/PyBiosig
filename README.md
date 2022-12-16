@@ -3,7 +3,7 @@ A python framework to work with biomedical signals
 
 ## Installation
 
-Simply install with: `pip install git+https://github.com/aalcaineo/pybiosig.git`
+Simply install with: `pip install pybiosig` or `pip install git+https://github.com/aalcaineo/pybiosig.git`
 
 ## Credits:
 
