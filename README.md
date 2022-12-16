@@ -1,9 +1,13 @@
 # PyBiosig
 A python framework to work with biomedical signals
 
+##### Version: 1.0.0
+
 ## Installation
 
-Simply install with: `pip install pybiosig` or `pip install git+https://github.com/aalcaineo/pybiosig.git`
+Simply install with: `pip install pybiosig` 
+
+For a more recent version use: `pip install git+https://github.com/aalcaineo/pybiosig.git`
 
 ## Credits:
 
