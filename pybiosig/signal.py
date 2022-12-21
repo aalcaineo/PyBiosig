@@ -17,7 +17,7 @@ import numpy as np
 
 class Signal:
     """Signal class as a container of np.ndarrays and attributes.
-    
+
     Signal is inmutable."""
 
     # STATICS
@@ -120,7 +120,7 @@ class Signal:
 
         return (
             len(set(self.__dict__.keys()).union(set(obj.__dict__.keys())) - common) == 0
-            and self.__data == obj.signal
+            and self.__data == obj.data
         )
 
     def __ne__(self, obj: "Signal") -> bool:
@@ -137,16 +137,51 @@ class Signal:
     def __getitem__(self, key: Any) -> np.ndarray:
         """Indexing and slicing.
 
+        It can be done also using channel names.
+
         Args:
-            key (Any): index or slice indexes.
+            key (Any): Index or slice indexes.
+
+        Raises:
+            IndexError: Incorrect signal name when channel
+            based slicing is used.
 
         Returns:
-            np.ndarray: _description_
-
-        TO-DO: Allow channel-based slicing
+            np.ndarray: Copy of the sliced signal with gain 
+            (if available).
         """
 
-        return self.__data[key].copy()
+        if isinstance(key, tuple):
+            k1, k2 = key
+            if isinstance(k2, list):
+                if any(isinstance(i, str) for i in k2):
+                    try:
+                        k2 = [self.channels.index(k) for k in k2]
+                    except ValueError:
+                        raise IndexError("Incorrect signal channel name.")
+
+            elif isinstance(k2, str):
+                try:
+                    k2 = self.channels.index(k2)
+                except ValueError:
+                    raise IndexError("Incorrect signal channel name.")
+
+            key = (k1, k2)
+        else:
+            if isinstance(key, list):
+                if any(isinstance(i, str) for i in key):
+                    try:
+                        key = (slice(None, None, None),[self.channels.index(k) for k in key])
+                    except ValueError:
+                        raise IndexError("Incorrect signal channel name.")
+
+            elif isinstance(key, str):
+                try:
+                    key = (slice(None, None, None), self.channels.index(key))
+                except ValueError:
+                    raise IndexError("Incorrect signal channel name.")
+
+        return self.signal[key]
 
     # PROPERTIES
     @property
@@ -168,14 +203,27 @@ class Signal:
         return self.__data.shape
 
     @property
-    def signal(self) -> np.ndarray:
-        """Property 'signal'.
+    def data(self) -> np.ndarray:
+        """Property 'data'.
 
         Returns:
             np.ndarray: Copy of stored data array.
         """
         return self.__data.copy()
-    
+
+    @property
+    def signal(self) -> np.ndarray:
+        """Property 'signal' with gain (if not available, this is identical to
+        the attribute 'data')
+
+        Returns:
+            np.ndarray: Copy of the signal with gain.
+        """
+        try:
+            return self.data * self.gain
+        except AttributeError:
+            return self.data
+
     @property
     def time_vector(self) -> np.ndarray:
         """Property 'time_vector'
@@ -184,9 +232,9 @@ class Signal:
             np.ndarray: Time vector of the signal.
         """
         try:
-            return np.arange(0,self.num_samp)/self.sf
+            return np.arange(0, self.num_samp) / self.sf
         except AttributeError:
-            return np.arange(0,self.num_samp)
+            return np.arange(0, self.num_samp)
 
     @property
     def T(self) -> np.ndarray:
@@ -225,7 +273,7 @@ class Signal:
         Returns:
             Any: Minimum value of data according to NumPy's .max() method.
         """
-        return self.__data.max(**kargs)
+        return self.signal.max(**kargs)
 
     def min(self, **kargs: Any) -> Any:
         """Minimum value of data.
@@ -236,7 +284,7 @@ class Signal:
         Returns:
             Any: Minimum value of data according to NumPy's .min() method.
         """
-        return self.__data.min(**kargs)
+        return self.signal.min(**kargs)
 
     def copy(self) -> "Signal":
         """Copy the object.
@@ -247,7 +295,7 @@ class Signal:
         attrs = {
             key: value for key, value in self.__dict__.items() if key != "_Signal__data"
         }
-        return Signal(self.signal, **attrs)
+        return Signal(self.data, **attrs)
 
     def process(self, func: Callable, *args: Any, **kargs: Any) -> "Signal":
         """Process a signal using a function.
@@ -279,15 +327,3 @@ class Signal:
         """
         self.__data = self.__checker(data)
         self.__dict__.update(kargs)
-
-    def get_signal_gain(self) -> np.ndarray:
-        """Get a copy of the signal with gain (if not available, this is identical to
-        the attribute 'signal')
-
-        Returns:
-            np.ndarray: Copy of the signal with gain.
-        """
-        try:
-            return self.signal * self.gain
-        except AttributeError:
-            return self.signal
