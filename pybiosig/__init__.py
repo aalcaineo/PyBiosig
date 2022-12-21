@@ -4,7 +4,7 @@ Py-BioSig
 -----------------------------------------------------------------------------------------
 A python framework to work with biomedical signals
 
-### Version: 1.0.0
+### Version: 1.1.0
 
 ### Credits:
 
@@ -18,7 +18,7 @@ Villanueva de Gállego (Zaragoza)\
 Spain
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 from pybiosig.signal import Signal
 import pybiosig.plots as plots
