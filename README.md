@@ -1,7 +1,7 @@
 # PyBiosig
 A python framework to work with biomedical signals
 
-##### Version: 1.0.0
+##### Version: 1.1.0
 
 ## Installation
 
