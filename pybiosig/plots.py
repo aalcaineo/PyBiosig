@@ -50,7 +50,7 @@ def iplot(
         Defaults to None: Time span of the signal/s.
 
         y_lim (tuple, optional): Vertical axis span limitation.
-        Defaults to None: Amplitude range of the signal/s.
+        Defaults to None: 105% of max/min amplitude of the signal/s.
 
         fig_title (str, optional): Title of the figure.
         Defaults to "".
@@ -77,23 +77,20 @@ def iplot(
         Defaults to True.
 
     Returns:
-        figure: Bokeh figure object.
+        figure: Bokeh figure object if to_notebook = False.
+
+        Returns -1 if any error happens
     """
     if to_notebook:
         output_notebook(hide_banner=True)
 
     t = signal.time_vector
-    s = signal.get_signal_gain()
-
-    x_lim = (min(t), max(t)) if x_lim is None else x_lim
-    y_lim = (s.min() * 1.05, s.max() * 1.05) if y_lim is None else y_lim
 
     plot = figure(
         title=fig_title,
         x_axis_label=x_label,
         y_axis_label=y_label,
-        x_range=x_lim,
-        y_range=y_lim,
+        x_range=(min(t), max(t)) if x_lim is None else x_lim,
         width=plot_width,
         height=plot_height,
         toolbar_location="below",
@@ -101,20 +98,39 @@ def iplot(
 
     try:
         if legend is None:
+            if y_lim is None:
+                plot.y_range.update(start=signal.min() * 1.05, end=signal.max() * 1.05)
+            else:
+                plot.y_range.update(start=y_lim[0], end=y_lim[1])
+
             for i in range(signal.num_signals):
-                plot.line(t, s[:, i], line_width=line_width, color=Colorblind[8][i % 8])
+                plot.line(
+                    t, signal[:, i], line_width=line_width, color=Colorblind[8][i % 8]
+                )
         else:
-            for leg in legend:
+            if y_lim is not None:
+                plot.y_range.update(start=y_lim[0], end=y_lim[1])
+
+            for i, leg in enumerate(legend):
                 try:
-                    i = signal.channels.index(leg)
+                    # i = signal.channels.index(leg)
                     plot.line(
                         t,
-                        s[:, i],
+                        signal[leg],
                         line_width=line_width,
                         color=Colorblind[8][i % 8],
                         legend_label=leg,
                     )
-                except ValueError:
+                    if y_lim is None:
+                        plot.y_range.update(
+                            start=plot.y_range.start
+                            if plot.y_range.start < signal[:, leg].min()
+                            else signal[:, leg].min() * 1.05,
+                            end=plot.y_range.end
+                            if plot.y_range.end > signal[:, leg].max()
+                            else signal[:, leg].max() * 1.05,
+                        )
+                except IndexError:
                     print(f"WARNING: {leg} is not an available signal.")
 
             plot.legend.click_policy = "hide"
@@ -131,7 +147,8 @@ def iplot(
 
         show(plot, notebook_handle=to_notebook)
 
-        return plot
+        if not to_notebook:
+            return plot
     except Exception as error:
         print("Error:" + str(error))
         return -1
@@ -186,54 +203,39 @@ def isubplot(
         Defaults to True.
 
     Returns:
-        figure: Bokeh figure object.
+        figure: Bokeh figure object if to_notebook = False.
+
+        Returns -1 if any error happens
     """
     if to_notebook:
         output_notebook(hide_banner=True)
 
     t = signal.time_vector
-    s = signal.get_signal_gain()
-
-    x_lim = (min(t), max(t)) if x_lim is None else x_lim
 
     try:
         if fig_title is None:
             fig_title = [f"signal {i + 1:d}" for i in range(signal.num_signals)]
 
-        if y_lim is None:
-            plots = [
-                figure(
-                    title=title,
-                    x_axis_label=x_label,
-                    y_axis_label=y_label,
-                    x_range=x_lim,
-                    width=plot_width,
-                    height=plot_height,
-                )
-                for title in fig_title
-            ]
-        else:
-            plots = [
-                figure(
-                    title=title,
-                    x_axis_label=x_label,
-                    y_axis_label=y_label,
-                    x_range=x_lim,
-                    y_range=y_lim,
-                    width=plot_width,
-                    height=plot_height,
-                )
-                for title in fig_title
-            ]
+        plots = [
+            figure(
+                title=title,
+                x_axis_label=x_label,
+                y_axis_label=y_label,
+                x_range=(min(t), max(t)) if x_lim is None else x_lim,
+                width=plot_width,
+                height=plot_height,
+            )
+            for title in fig_title
+        ]
 
         for i, plot in enumerate(plots):
             try:
-                j = signal.channels.index(fig_title[i])
-                plot.line(
-                    t, s[:, j], line_width=line_width
-                )
-            except ValueError:
-                plot.line(t, s[:, i], line_width=line_width)
+                plot.line(t, signal[fig_title[i]], line_width=line_width)
+            except IndexError:
+                plot.line(t, signal[:, i], line_width=line_width)
+
+            if y_lim is not None and i == 0:
+                plot.y_range.update(start=y_lim[0], end=y_lim[1])
 
             if i > 0 and sync_axis:  # This synchronizes all subplots for panning
                 plot.x_range = plots[0].x_range
@@ -252,8 +254,8 @@ def isubplot(
             notebook_handle=to_notebook,
         )
 
-        return plot
+        if not to_notebook:
+            return plot
     except Exception as error:
         print("Error:" + str(error))
         return -1
-    
